@@ -1,10 +1,13 @@
 import './style.css'
 import {effect, map, track, trigger} from "./effect.ts";
+import {computed} from "./computed.ts";
 
 interface Obj {
     ok: boolean,
     text: string,
     text2: string,
+    foo: number,
+    bar: number,
     count: number
 }
 
@@ -12,6 +15,8 @@ const data = {
     ok: false,
     text: 'hello',
     text2: 'hello2',
+    foo: 1,
+    bar: 2,
     count: 1
 }
 
@@ -46,17 +51,12 @@ function flushJob() {
     })
 }
 
-effect(function fun1() {
-    console.log(obj.count)
-}, {
-    schedule(fn: Function) {
-        jobQueue.add(fn)
-        flushJob()
-    }
-})
+const sumRef = computed(() => obj.foo + obj.bar)
 
-obj.count ++
-obj.count ++
+console.log('sumRef', sumRef.value);
+console.log('sumRef', sumRef.value);
+obj.foo ++
+console.log('sumRef', sumRef.value);
 
 // setTimeout(() => {
 //     console.log('map', map);
