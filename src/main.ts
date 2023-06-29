@@ -12,18 +12,16 @@ const data = {
     ok: false,
     text: 'hello',
     text2: 'hello2',
-    count: 0
+    count: 1
 }
 
 const obj = new Proxy(data, {
     get(target: Obj, p: string | symbol, receiver: any): any {
-        console.log('track')
         track(target, p)
         return target[p]
     },
     set(target: Obj, p: string | symbol, newValue: any, receiver: any): boolean {
         target[p] = newValue
-        console.log('trigger')
         trigger(target, p)
         return newValue
     }
@@ -35,12 +33,30 @@ const dom = document.querySelector('#app') as HTMLElement
 
 const dom2 = document.querySelector('#app2') as HTMLElement
 
+const jobQueue = new Set<Function>()
+const p = Promise.resolve()
+let isFlushing = false
+function flushJob() {
+    if (isFlushing) return
+    isFlushing = true
+    p.then(() => {
+        jobQueue.forEach(job => job())
+    }).finally(() => {
+        isFlushing = false
+    })
+}
 
 effect(function fun1() {
-    console.log('function1 执行')
-    obj.count ++
+    console.log(obj.count)
+}, {
+    schedule(fn: Function) {
+        jobQueue.add(fn)
+        flushJob()
+    }
 })
 
+obj.count ++
+obj.count ++
 
 // setTimeout(() => {
 //     console.log('map', map);

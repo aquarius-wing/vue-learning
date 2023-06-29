@@ -4,12 +4,20 @@ type Function = () => void
 type ObjKeyMap = Map<string, Set<Function>>
 
 type ObjMap = WeakMap<object, ObjKeyMap>
+
+type OptionsType = {
+    schedule?: (func: Function) => void
+}
 export const map = new WeakMap() as ObjMap
 
 const activeEffect: Function[] = []
-export function effect(fn: () => void) {
+export function effect(fn: () => void, options: OptionsType = {}) {
     activeEffect.push(fn)
-    fn()
+    if (options.schedule) {
+        options.schedule(fn)
+    } else {
+        fn()
+    }
     activeEffect.pop()
 }
 
@@ -42,8 +50,6 @@ export function trigger(obj: object, p: string | symbol) {
                     && f !== activeEffect[activeEffect.length - 1]
                 )
             ) {
-                console.log('f', f);
-                console.log('activeEffect[', activeEffect);
                 f()
             }
         })
