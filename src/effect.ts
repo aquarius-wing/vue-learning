@@ -36,6 +36,16 @@ export function trigger(obj: object, p: string | symbol) {
     }
     const functionSet = functionMap.get(p)
     if (functionSet) {
-        functionSet.forEach((f) => f())
+        functionSet.forEach((f) => {
+            if (activeEffect.length === 0
+                || (activeEffect.length > 0
+                    && f !== activeEffect[activeEffect.length - 1]
+                )
+            ) {
+                console.log('f', f);
+                console.log('activeEffect[', activeEffect);
+                f()
+            }
+        })
     }
 }
