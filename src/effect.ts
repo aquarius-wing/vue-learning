@@ -6,11 +6,11 @@ type ObjKeyMap = Map<string, Set<Function>>
 type ObjMap = WeakMap<object, ObjKeyMap>
 export const map = new WeakMap() as ObjMap
 
-let activeEffect: Function | undefined
+const activeEffect: Function[] = []
 export function effect(fn: () => void) {
-    activeEffect = fn
+    activeEffect.push(fn)
     fn()
-    activeEffect = undefined
+    activeEffect.pop()
 }
 
 export function track(obj: object, p: string) {
@@ -24,8 +24,8 @@ export function track(obj: object, p: string) {
         functionSet = new Set<Function>()
         functionMap.set(p, functionSet)
     }
-    if (activeEffect) {
-        functionSet.add(activeEffect)
+    if (activeEffect.length > 0) {
+        functionSet.add(activeEffect[activeEffect.length - 1])
     }
 }
 
