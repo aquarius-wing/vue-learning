@@ -53,10 +53,12 @@ function flushJob() {
 
 const sumRef = computed(() => obj.foo + obj.bar)
 
-console.log('sumRef', sumRef.value);
-console.log('sumRef', sumRef.value);
+effect(function sum(){
+    // 在该副作用函数中读取sumRes.value
+    console.log('sumRef', sumRef.value);
+})
+// 修 改 obj.foo的值 obj.foo++
 obj.foo ++
-console.log('sumRef', sumRef.value);
 
 // setTimeout(() => {
 //     console.log('map', map);

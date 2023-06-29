@@ -1,4 +1,4 @@
-import {effect} from "./effect.ts";
+import {effect, track, trigger} from "./effect.ts";
 
 export type Ref = {
     value: any
@@ -9,6 +9,17 @@ export function computed(getter: () => any): Ref {
     let value
     let dirty = true
 
+    const obj = {
+        get value() {
+            if (dirty) {
+                dirty = false
+                value = effectFn()
+            }
+            track(obj, 'value')
+            return value
+        }
+    }
+
     const effectFn = effect(getter, {
         lazy: true,
         schedule(fn: Function) {
@@ -17,18 +28,9 @@ export function computed(getter: () => any): Ref {
             // 这才符合lazy的设计
             console.log('dirty set true')
             dirty = true
+            trigger(obj, 'value')
         }
     }) as () => any
 
-    return {
-        get value() {
-            console.log('dirty', dirty)
-            if (dirty) {
-                dirty = false
-                value = effectFn()
-                return value
-            }
-            return value
-        }
-    }
+    return obj
 }
