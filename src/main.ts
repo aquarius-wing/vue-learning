@@ -1,6 +1,7 @@
 import './style.css'
 import {effect, map, track, trigger} from "./effect.ts";
 import {computed} from "./computed.ts";
+import {watch} from "./watch.ts";
 
 interface Obj {
     ok: boolean,
@@ -8,7 +9,7 @@ interface Obj {
     text2: string,
     foo: number,
     bar: number,
-    count: number
+    count: number,
 }
 
 const data = {
@@ -17,7 +18,10 @@ const data = {
     text2: 'hello2',
     foo: 1,
     bar: 2,
-    count: 1
+    count: 1,
+    obj1: {
+        count1: 1
+    }
 }
 
 const obj = new Proxy(data, {
@@ -53,12 +57,20 @@ function flushJob() {
 
 const sumRef = computed(() => obj.foo + obj.bar)
 
-effect(function sum(){
-    // 在该副作用函数中读取sumRes.value
-    console.log('sumRef', sumRef.value);
+// effect(function sum(){
+//     // 在该副作用函数中读取sumRes.value
+//     console.log('sumRef', sumRef.value);
+// })
+
+watch(obj, (newValue) => {
+    console.log('newValue', newValue);
 })
-// 修 改 obj.foo的值 obj.foo++
-obj.foo ++
+
+setTimeout(() => {
+    obj.obj1 = {
+        count1: obj.obj1.count1 + 10
+    }
+}, 2000)
 
 // setTimeout(() => {
 //     console.log('map', map);
