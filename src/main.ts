@@ -13,11 +13,19 @@ function createRenderer() {
     }
 }
 
+let unmountCount = 0
+
 function unmount(vNode: VNodeType) {
+    unmountCount ++
     const parent = vNode.el.parentNode
     if (parent) {
         parent.removeChild(vNode.el)
     }
+}
+
+function unmountTextNode(vNode: VNodeType) {
+    unmountCount ++
+    vNode.el!.innerText = ''
 }
 
 
@@ -28,7 +36,7 @@ function patch(oldVNode: VNodeType | undefined, newVNode: VNodeType, container: 
         oldVNode = undefined
     }
     const newType = newVNode
-    if (oldVNode === undefined) {
+    if (oldVNode === undefined || oldVNode === null) {
         mountElement(newVNode, container)
     } else {
         patchElement(oldVNode, newVNode)
@@ -66,6 +74,24 @@ function patchChildren(oldVNode: VNodeType, newVNode: VNodeType, container: HTML
             container.innerText = newVNode.children
         }
     }
+
+    // 如果一个是字符串，一个是其他的
+    if (typeof oldVNode.children === 'string' && Array.isArray(newVNode.children)) {
+        oldVNode.el!.innerText = ''
+        for (const newVNodeChildren of newVNode.children) {
+            mountElement(newVNodeChildren, newVNode.el!)
+        }
+    }
+
+    // 如果都是children
+    if (Array.isArray(oldVNode.children) && Array.isArray(newVNode.children)) {
+        for (let i = 0; i < newVNode.children.length; i++) {
+            const newChild = newVNode.children[i]
+            const oldChild = oldVNode.children[i]
+            patch(oldChild, newChild, newVNode.el!)
+        }
+    }
+
 }
 
 
@@ -84,7 +110,7 @@ type VNodeType = {
     el?: HTMLElement
 }
 
-const vNode1 = {
+/*const vNode1 = {
     type: 'div',
     children: '1'
 }
@@ -93,10 +119,36 @@ renderer.render(vNode1, document.querySelector('#app')!)
 
 const vNode2 = {
     type: 'div',
-    children: '2'
+    children: [
+        { type: 'p', children: '2' }
+    ]
 }
 
 setTimeout(() => {
     renderer.render(vNode2, document.querySelector('#app')!)
+}, 2000)*/
+
+
+const vNode1 = {
+    type: 'div',
+    children: [
+        { type: 'p', children: '1' },
+        { type: 'div', children: '2' },
+    ]
+}
+
+renderer.render(vNode1, document.querySelector('#app')!)
+
+const vNode2 = {
+    type: 'div',
+    children: [
+        { type: 'div', children: '2' },
+        { type: 'p', children: '3' }
+    ]
+}
+
+setTimeout(() => {
+    renderer.render(vNode2, document.querySelector('#app')!)
+    console.log('unmountCount', unmountCount);
 }, 2000)
 
