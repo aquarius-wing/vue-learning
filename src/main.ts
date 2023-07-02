@@ -67,6 +67,15 @@ function patchElement(oldVNode: VNodeType, newVNode: VNodeType) {
     }
 }
 
+function findReuseOldVNode(newChild: VNodeType, children: VNodeType[]){
+    for (const child of children) {
+        if (child.type === newChild.type) {
+            return child
+        }
+    }
+    return undefined
+}
+
 function patchChildren(oldVNode: VNodeType, newVNode: VNodeType, container: HTMLElement) {
     // 如果都是字符串
     if (typeof oldVNode.children === 'string' && typeof newVNode.children === 'string') {
@@ -87,7 +96,7 @@ function patchChildren(oldVNode: VNodeType, newVNode: VNodeType, container: HTML
     if (Array.isArray(oldVNode.children) && Array.isArray(newVNode.children)) {
         for (let i = 0; i < newVNode.children.length; i++) {
             const newChild = newVNode.children[i]
-            const oldChild = oldVNode.children[i]
+            const oldChild = findReuseOldVNode(newChild, oldVNode.children)
             patch(oldChild, newChild, newVNode.el!)
         }
     }
