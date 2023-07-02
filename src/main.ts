@@ -1,78 +1,102 @@
 import './style.css'
-import {effect, map, track, trigger} from "./effect.ts";
-import {computed} from "./computed.ts";
-import {watch} from "./watch.ts";
 
-interface Obj {
-    ok: boolean,
-    text: string,
-    text2: string,
-    foo: number,
-    bar: number,
-    count: number,
-}
 
-const data = {
-    ok: false,
-    text: 'hello',
-    text2: 'hello2',
-    foo: 1,
-    bar: 2,
-    count: 1,
-    obj1: {
-        count1: 1
+
+function createRenderer() {
+    function render(vNode: VNodeType, container: HTMLElement) {
+        const oldVNode = container._vNode
+        patch(oldVNode, vNode, container)
+    }
+
+    return {
+        render
     }
 }
 
-const obj = new Proxy(data, {
-    get(target: Obj, p: string | symbol, receiver: any): any {
-        track(target, p)
-        return target[p]
-    },
-    set(target: Obj, p: string | symbol, newValue: any, receiver: any): boolean {
-        target[p] = newValue
-        trigger(target, p)
-        return newValue
+function unmount(vNode: VNodeType) {
+    const parent = vNode.el.parentNode
+    if (parent) {
+        parent.removeChild(vNode.el)
     }
-})
-
-
-
-const dom = document.querySelector('#app') as HTMLElement
-
-const dom2 = document.querySelector('#app2') as HTMLElement
-
-const jobQueue = new Set<Function>()
-const p = Promise.resolve()
-let isFlushing = false
-function flushJob() {
-    if (isFlushing) return
-    isFlushing = true
-    p.then(() => {
-        jobQueue.forEach(job => job())
-    }).finally(() => {
-        isFlushing = false
-    })
 }
 
-const sumRef = computed(() => obj.foo + obj.bar)
 
-// effect(function sum(){
-//     // 在该副作用函数中读取sumRes.value
-//     console.log('sumRef', sumRef.value);
-// })
+function patch(oldVNode: VNodeType | undefined, newVNode: VNodeType, container: HTMLElement) {
+    if (oldVNode && oldVNode.type !== newVNode.type) {
+        // 无法复用，则删除
+        unmount(oldVNode)
+        oldVNode = undefined
+    }
+    const newType = newVNode
+    if (oldVNode === undefined) {
+        mountElement(newVNode, container)
+    } else {
+        patchElement(oldVNode, newVNode)
+    }
 
-watch(obj, (newValue) => {
-    console.log('newValue', newValue);
-})
+}
+
+function mountElement(vNode: VNodeType, container: HTMLElement) {
+    const dom = document.createElement(vNode.type)
+    vNode.el = dom
+    // 只有这里赋值了，才能在上面的render里面拿到
+    container._vNode = vNode
+    container.insertBefore(dom, null)
+    if (Array.isArray(vNode.children)) {
+        for (const child of vNode.children) {
+            patch(null, child, dom)
+        }
+    }
+    if (typeof vNode.children === 'string') {
+        dom.innerText = vNode.children
+    }
+}
+
+function patchElement(oldVNode: VNodeType, newVNode: VNodeType) {
+    const el = newVNode.el = oldVNode.el
+    if (el) {
+        patchChildren(oldVNode, newVNode, el)
+    }
+}
+
+function patchChildren(oldVNode: VNodeType, newVNode: VNodeType, container: HTMLElement) {
+    // 如果都是字符串
+    if (typeof oldVNode.children === 'string' && typeof newVNode.children === 'string') {
+        if (oldVNode.children !== newVNode.children) {
+            container.innerText = newVNode.children
+        }
+    }
+}
+
+
+
+
+
+
+const renderer = createRenderer()
+
+type TAG = string
+
+type VNodeType = {
+    type: TAG
+    children: VNodeType[] | string
+    key?: number
+    el?: HTMLElement
+}
+
+const vNode1 = {
+    type: 'div',
+    children: '1'
+}
+
+renderer.render(vNode1, document.querySelector('#app')!)
+
+const vNode2 = {
+    type: 'div',
+    children: '2'
+}
 
 setTimeout(() => {
-    obj.obj1 = {
-        count1: obj.obj1.count1 + 10
-    }
+    renderer.render(vNode2, document.querySelector('#app')!)
 }, 2000)
 
-// setTimeout(() => {
-//     console.log('map', map);
-//     obj.count ++
-// }, 2000)
